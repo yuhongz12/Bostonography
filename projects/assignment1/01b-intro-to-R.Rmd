@@ -1,0 +1,232 @@
+---
+title: "Bostonography - R Intro"
+output:  html_document
+---
+
+Welcome to R!  This is an RMarkdown document.  It has two parts: the .Rmd file that contains the code in plain text, and the .html file that shows the output in a pretty and portable format.
+
+R code in between the triple-apostrophes (look at the .Rmd code to see what I'm talking about) is executed by R when you 'knit' the .Rmd document to make the .html output document; text outside the triple apostrophes is just printed.  
+
+You can also include specially formatted html (see [here]() for more) in your .Rmd for links and other html-like stuff, and you can include nicely formatted math symbols by putting it between dollar signs: $3^2 + 2/5$ (see the documentation for [latex]() for more math formatting).  Finally, see [here]() for more on RMarkdown, including fancier formatting of R code output.
+
+I will explain how RStudio, the R console, and other interactive elements work in class.  For now, let's just look at the basics of the R language.  Note that grey boxes are the input code, and white boxes contain the output from R, which R calculates on the fly every time you 'knit' the .Rmd file into .html.
+
+#### Math calculations
+```{r}
+2+3
+```
+
+#### Variables
+```{r}
+mysum <- 2+3
+```
+Note that there was no output from the above.
+
+What's in "sum"?
+```{r}
+mysum
+```
+
+#### Vectors
+```{r}
+v <- c(1,5,9,7,2)
+v
+```
+
+Vector tricks:
+```{r}
+# Sequence:
+v <- 1:10
+v
+# Repetition
+rep(5,3)
+# Adding elements to a vector
+c(v,100)
+# Multiplication
+v <- 2*v
+# Get the first three elements, say
+v[1:3]
+```
+
+#### Matrices
+
+Make a matrix
+```{r}
+m <- matrix(1:6,2,3)
+m
+```
+Note that this function fills the matrix with the input vector 1:6 by columns; you can of course change that.
+
+Make a matrix by gluing columns or rows together:
+```{r}
+m <- rbind(v[1:3],v[5:7])
+m
+```
+And _cbind_ does it by gluing columns together.
+
+Getting elements from a matrix: row id first, column id second.
+```{r}
+m[2,3]
+m[1:2,3]
+# get a whole row or column by leaving it blank:
+m[,2:3]
+```
+
+#### Data types and data frames
+
+Data frames are like matrices, but each column can be in a different format (matrices only take numbers)
+
+Characters (strings):
+```{r}
+names <- c("truck","car","lettuce","porkchop")
+str(names)
+```
+
+Data frame
+```{r}
+df <- data.frame(nmbr=1:4,nms=names)
+df
+str(df)
+```
+
+Note that the data.frame function has converted the _string_ into a _factor_ (categorical variable).  We can avoid this if we want to keep it a string.
+
+```{r}
+df$nms <- as.character(df$nms)
+str(df)
+```
+Note how we can refer to the column/variable in our dataframe __df__ by using the \$ sign followed by the name of the variable.
+
+#### Reading and manipulating data
+
+Usually we set the _working directory_ first to tell R where to look, and then we can read in and output files in that directory.
+
+```{r}
+# If you run this yourself, be sure to change this to your own working directory
+setwd("~/Desktop/Dropbox/bostonography_S2020/lectures etc/Week 01 - Introduction/day 2")
+```
+
+Now we can easily read in a dataset in plain text
+```{r}
+newdf <- read.table(file="Census_Data_1880_1930.txt",header=TRUE,sep="\t")
+```
+R has functions for dealing with lots of different data types.
+
+This dataset is from the Boston census.  Let's examine it a bit:
+```{r}
+str(newdf)
+head(newdf)
+summary(newdf$year)
+table(newdf$year)
+```
+
+We'll come back to exploring these data in a minute!
+
+Save it as a more efficient RData object; remove it from R's memory (which only matters if you're working in the console; everything is removed from memory each time you knit the .Rmd file); load it back again:
+
+```{r}
+save(newdf,file="df1.RData")
+rm(newdf)
+load(file="df1.RData")
+head(newdf)
+```
+
+#### Logic, programs and functions
+
+R works in fairly familiar way for anyone used to programming:
+
+```{r}
+3 > 4
+```
+
+```{r}
+if(3 < 4){
+  print("Yes")
+}
+```
+
+```{r}
+for(i in 1:3){
+  print(i)
+}
+```
+
+```{r}
+for(i in c("cat","dog","porkchop")){
+  print(i)
+}
+```
+
+```{r}
+for(i in 1:3){
+  v[i] <- "cat"
+}
+v
+```
+
+There are many thousands of functions built into R, and many more can be included via "packages".  Packages must be first installed (ie, downloaded from the official online repository), and then can be included in your code via "library(packagename)".  Eg:
+
+```{r}
+# install.packages("ggplot2") # This only needs to be run once!
+library(ggplot2) # This needs to be loaded every time.
+# We will see how to use the functions in this package next week!
+```
+
+Make your own function:
+```{r}
+  # define the function named "doubleit"
+  doubleit <- function(x){
+    doubled <- x*2
+    return(doubled)
+  }
+  # now we can use it
+  sevendoubled <- doubleit(7)
+  sevendoubled
+```
+
+#### Exploring, analyzing and visualizing data
+
+Now let's play with our census data a bit.
+
+```{r}
+# Mean age goes up, despite lots of young migrants
+newdf$age[is.na(as.numeric(newdf$age))] <- 0
+mean(as.numeric(newdf$age[newdf$year == 1880]))
+mean(as.numeric(newdf$age[newdf$year == 1930]))
+# (Note that the last two years in the US were the first time this hasn't happened in many decades!)
+```
+
+We can also examine this visually -- though more on visualization next week:
+```{r}
+hist(as.numeric(newdf$age[newdf$year == 1880]), freq=FALSE)
+hist(as.numeric(newdf$age[newdf$year == 1930]), freq=FALSE)
+```
+
+What are their main occupations by gender?
+```{r}
+maleocc <- table(newdf$occ1950[newdf$sex=="Male" & as.numeric(newdf$age) > 16]) / nrow(newdf)
+round( maleocc[order(-maleocc)][1:10] ,3)
+
+maleocc <- table(newdf$occ1950[newdf$sex=="Female" & as.numeric(newdf$age) > 16])  / nrow(newdf)
+round( maleocc[order(-maleocc)][1:10] ,3)
+```
+
+Racial makeup
+```{r}
+newdf1880 <- newdf[newdf$year == 1880,]
+newdf1930 <- newdf[newdf$year == 1930,]
+round( table(newdf1880$raced) / nrow(newdf1880) ,3)
+round( table(newdf1930$raced) / nrow(newdf1930) ,3)
+```
+
+Where were they born?
+```{r}
+bpl1880 <- table(newdf1880$bpl) / nrow(newdf1880)
+round( bpl1880[order(-bpl1880)][1:10] , 3)
+
+bpl1930 <- table(newdf1930$bpl) / nrow(newdf1930)
+round( bpl1930[order(-bpl1930)][1:10] , 3)
+```
+
+
+
