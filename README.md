@@ -4,7 +4,7 @@ This repository contains the assignments and code I have written for INSH 2102: 
 
 ##### Links:
 
-* [Assignment 1: Data Analysis using R](https://yuhongz12.github.io/Bostonography/projects/Assignment1/assignment1.html)
+* [Assignment 1: Data Analysis using R](https://yuhongz12.github.io/Bostonography/projects/assignment1/assignment1.html)
 * [Assignment 2: Intro to ggplot2](https://yuhongz12.github.io/Bostonography/projects/Assignment2/Assignment2.html)
 * [Assignment 3: Spatial Data Analysis](https://yuhongz12.github.io/Bostonography/projects/Assignment3/Assignment3.html)
 * [Assignment 4: Does the season affect the subway ridership in Boston?](https://yuhongz12.github.io/Bostonography/projects/Assignment4/Assignment4.html)
