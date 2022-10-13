@@ -1,0 +1,106 @@
+---
+title: "Legislative Scaling"
+author: "Nick Beauchamp"
+date: "2/26/2020"
+output: html_document
+---
+
+Let's read in some roll-call votes from MA, 2015-2016.
+
+```{r}
+setwd("~/Desktop/Dropbox/bostonography_S2020/readings, lectures, code, data/Week 8 - Electoral and Legislative Politics/Day 2 - Legislative Politics")
+
+yeanay <- read.table(file="pvotes_yeanay.csv",sep=",",stringsAsFactors=F)
+yeanay[1:10,1:10]
+```
+
+It's a bunch of people, and if they voted for some bill it's a 1, and if they voted against it it's a 0.  But we don't know what the bills are about, or what voting for it or against it means!  We don't even know what party people below to.  How do can we model how people will vote, or figure out who is liberal and who is conservative?
+
+Let's start by cheating.  We can ask the experts to do the hard work for us.  Dozens of different groups "score" legislators on bills they support or oppose, such as _Progressive Massacusetts_.  For each "scored" vote, a legislator gets a + or - depending whether they vote the way the group wants, and at the end of the year or sesssion they get a score.  You may be familiar with this from NRA scores, which have been in the news recently.
+
+
+Let's examine the _Progressive Massachusetts_ scoring, from the website here (https://www.progressivemass.com/189thscorecard-house).  For 2015-2015, there are 23 scored bills over 164 House members.  
+
+```{r}
+prog <- read.csv("ma_prog_scorecard.csv",header=FALSE,stringsAsFactors=F,sep=",")
+dim(prog)
+prog[1:5,1:5]
+```
+
+The first column is the _Progressive Massachusetts_ score for a legislator.  We can closely approximate this score by simply taking the sum of the 1s (pro-progressive votes) for each legislator:
+
+```{r}
+pscore <- rowSums(prog[,-c(1:3)],na.rm=T)
+cor(pscore,prog[,1])
+```
+
+But what if we don't have the cheat -- either no one can score the bills, or perhaps we disagree with how _Progressive Massachusetts_ scores things.
+
+Well, we can figure out left vs right even without knowing the ideology of each bill.  Let's take our unscored, yeanay vote record, and use Principal Component Analysis.  We take the first principal component, and compare it to the laboriously constructed _Progressive Massachusetts_ score.
+
+```{r}
+pcaout <- prcomp(yeanay[,2:24])
+pca1 <- pcaout$x[,1]
+cor(pca1,prog[,1]) # Compare PCA1 to the _Progressive Massachusetts_ score.
+plot(pca1,prog[,1]) 
+```
+
+Voila -- not need for elaborate scoring, you can just get it straight from the raw vote record.
+
+What is principal component analysis?  It basically just finds the axis of greatest variance for any high-dimensional dataset, much like a regression finds the best-fit line. We'll discuss this more in class, but mathematically it generally involves finding the "eigenvectors" $v$ of a data or correlation matrix $M$: $\lambda v = Mv$.  But it turns out the first principal component is suprisingly easy to calculate:
+
+```{r}
+vdat <- as.matrix(yeanay[,2:24]) # convert to matrix
+set.seed(1)
+colv <- rnorm(ncol(vdat)) # start with random vector
+# Then multiply it back and forth through the data matrix
+for(i in 1:3){
+  rowv <- vdat %*% scale(colv)
+  colv <- t(vdat) %*% scale(rowv)
+  cat(round(head(rowv),4),"\n")
+}
+cor(rowv,pca1)
+```
+
+Here's another example, totally unrelated to politics or Boston.  It's a survey of people's feelings at a given moment, yes or no answers to a bunch of feelings:
+
+```{r}
+library(psychTools)
+data(msq)
+msq1 <- msq[,2:72]     
+msq1[msq1=="9"] = NA      
+msq1 <- data.frame(msq1) 
+msq2 <- na.omit(msq1)    
+msq2[1,]
+
+# What is the principal dimension of feeling?
+pcaA <- prcomp(msq2)
+pcaA1 <- pcaA$rotation[,1]
+pcaA1[order(pcaA1)]
+```
+
+
+Note that we cheated a little with the bill rollcall data.  Rather than download the raw "rollcall" vote record (which is a pain to get), I just turned the _Progressive Massachusetts_ vote record into an unscored record by randomly flipping the 0s/1s for some bills.  This is the same as what you would get with a raw vote record, but easier for illustration purposes than working through the whole API/JSON rigamarole to get the full vote record.
+
+```{r}
+set.seed(1)
+yeanay <- prog
+for(c in 4:26){
+  flip <- round(runif(1))
+  if(flip == 1){
+    for(r in 1:nrow(prog))
+      if(!is.na(prog[r,c])){
+        yeanay[r,c] <- ifelse(prog[r,c]==0,1,0) 
+      }
+  }
+}
+yeanay[is.na(yeanay)] <- 0.5
+write.table(yeanay[,-c(1,3)],file="pvotes_yeanay.csv",sep=",",row.names=F,col.names=F)
+```
+
+For free MA legislative data you can go here: https://legiscan.com/MA/datasets (with R package at https://rdrr.io/github/wbuchanan/legiscanR/f/README.md ).  For fairly cheap and much more thorough, you can go here: https://votesmart.org/share/api (with R package at http://cran.r-project.org/web/packages/pvsR/index.html )
+
+And for extremely unuseful data, you can go here: https://malegislature.gov/Journal/House/189 , which helpfully presents all votes in blurry image-of-text PDFs, very much on purpose.  As we've read, the MA House also to hold unrecorded voice votes as often as possible.
+
+
+

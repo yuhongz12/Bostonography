@@ -1,0 +1,8 @@
+"0","# Filtering out 2016 data "
+"0","orangeLine2016 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == ""2016"")"
+"0","# Add a month column into our data"
+"0","orangeLine2016$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)"
+"0","# Factor the month column"
+"0","orangeLine2016$Month <- factor(orangeLine2016$Month)"
+"0",""
+"0","head(orangeLine2016)"

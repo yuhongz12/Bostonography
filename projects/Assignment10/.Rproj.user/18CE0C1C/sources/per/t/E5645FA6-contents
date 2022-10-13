@@ -1,0 +1,56 @@
+---
+title: "Yuhong Zhao - Assignment1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Importing Data
+
+This is census data from the 1880 to 1830. Importing the dataset into R:
+
+```{r}
+newdf <- read.table(file="Census_Data_1880_1930.txt",header=TRUE,sep="\t")
+```
+
+## Extracting Data
+
+Extracting the birthplace and their parent's birthplace from the data set.
+
+```{r}
+# Extract the birthplace of each census participant 
+birthplace <- table(newdf$bpl)
+
+#Extract the mother's of each census participants
+motherBirthplace <- table(newdf$mbpl)
+
+#Extract the father's of each census participants
+fatherBirthplace <- table(newdf$fbpl)
+
+```
+
+
+
+## Graphing the data using a pie chart
+```{r}
+#The birthplace of each participants shown in a pie chart
+pie(birthplace)
+
+#The birthplace of each participants shown in a pie chart
+pie(motherBirthplace)
+
+#The birthplace of each participants shown in a pie chart
+pie(fatherBirthplace) 
+```
+
+## Analyzing
+
+If we compare the pie chart  of the mother's and father's birthplace, we can see that both are very similar and almost exactly. However, if we look at the participants' birthplace pie chart, we can see that there is some difference. Massachusetts is the majority birthplace with over 50% compared to their parent's majority birthplace which is Ireland. From this observation, we can say that there are more second generation immigrants than first generation immigrants. 
+
+
+
+
+
+

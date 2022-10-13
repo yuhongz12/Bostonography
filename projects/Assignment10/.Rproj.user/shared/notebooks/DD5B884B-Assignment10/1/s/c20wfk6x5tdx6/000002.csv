@@ -1,0 +1,1 @@
+"0","newdf <- read.table(file=""Census_Data_1880_1930.txt"",header=TRUE,sep=""\t"")"

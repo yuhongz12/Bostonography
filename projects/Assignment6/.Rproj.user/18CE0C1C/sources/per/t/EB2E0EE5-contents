@@ -1,0 +1,82 @@
+---
+title: "Assignment6"
+author: "Yuhong Zhao"
+date: "3/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 192nd Senate Scorecard Data
+
+I will be looking at the the 192nd MA Senate roll call votes and analyzing the voting behavior for each state senator. The data will taken from Progressive Mass (Source: https://www.progressivemass.com/portfolio/192-senate-scorecard/). I copied the data into Google Sheets and cleaned the data there.
+
+To clean the data, first, I have to remove the all the white and empty rows/columns and rows/columns that were are not interested such as the districts they represents and their campaign website and contact information. Then, I renamed some cells to be more informative such as putting "Yes" and "No" instead "#". 
+
+For some senators, their political party were missing from the data and I've added based on the information I've got from Wikipedia. These senators were:
+
+* Adam Gomez, who is an Democrat
+  + Source: https://en.wikipedia.org/wiki/Adam_Gomez
+* Ted Kennedy, who is an Democrat
+  + Source: https://en.wikipedia.org/wiki/Ted_Kennedy
+* Barry Finegold, who is an Democrat
+  + Source: https://en.wikipedia.org/wiki/Barry_Finegold
+
+There are also some senators who have N/A data. This may mean the senator was not present during the voting session for that respective bill. These senators are Joseph Boncore and Karen Spilka. We can eliminate these from our data since they have many N/A data entries and removing them will make our analysis easier and will not have a significant impact.
+  
+The end result is clean data that we can use to analysis using PCA (Principal Component Analysis).
+
+Data after cleaning: https://docs.google.com/spreadsheets/d/1AU8zwlMBealaovJiTgFPThg9gDryDekRecYPlmDlCyY/edit?usp=sharing
+
+# Importing Data
+
+I am interested in looking how does the progressive score correlates with the PCA of each senator.
+
+First I have to import the data into RStudio.
+
+``` {r}
+ # importing data
+scorecard <- read.csv("scorecard_192nd_MASenate.csv")
+
+head(scorecard)
+
+```
+
+For the PCA, I would like to sample only bills that were related to Poverty. According to the Progressive Mass website, it categories each bills, and I will using this to select bills that were categories for Poverty.It states the 4s, 14s, and 15s are related to poverty, which are Amendment S. 35, Bill H.4011, and Bill H.4011, respectively.
+
+Therefore, I can select the columns about these three bills and store it in a variable.
+``` {r} 
+# Selecting columns by their name
+poverty <- scorecard[, c('X4s', 'X14s', 'X15s')]
+
+head(poverty)
+```
+
+
+# Principal Component Analysis 
+
+Once I got the sample data to do the PCA, we can run it through the prcomp function. This function will accept a matrix which the variable we created previously is. The PCA basically merge the three column of data into a simpler one column where it will be easier to analysis and correlate with other variables. 
+
+``` {r}
+
+# apply PCA to our variable
+pcaout <- prcomp(poverty)
+pca1 <- pcaout$x[,1]
+pca1
+```
+
+Then, I can calculate the correlation and plot it against the progressive score.
+
+``` {r}
+# compute the correlation 
+cor(pca1,scorecard$ProgessiveScore)
+
+# simple point plot
+plot(pca1,scorecard$ProgessiveScore)
+```
+
+# Conclusion
+
+From the plot, I can conclude that there is a strong negative correlation between the PCA results and the progressive score, which is supported by the computed correlation value. Therefore, as the PCA decreases the higher percentage the progressive score gets and as the PCA increases, the lower percentage the progressive score gets. This shows a trend for future bills that are related to poverty.

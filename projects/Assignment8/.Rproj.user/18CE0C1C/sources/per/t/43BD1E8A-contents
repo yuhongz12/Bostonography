@@ -1,0 +1,100 @@
+---
+title: "Assignment8"
+author: "Yuhong Zhao"
+date: "4/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## State Neigbors
+
+We are interested in the network of the states that each state border. In the website (https://state.1keydata.com/bordering-states-list.php), it contains the bordering states for each US states. We can uses this data and create a network map to see which US state has the most neighbors.
+
+First, I have to imported the data into Google Sheet and clean up the data. After an hour of manually cleaning the data, we have the data in the way we want.
+
+**Data:** https://docs.google.com/spreadsheets/d/1_VyCO6IVlyeTUjcUf_nKp1VUHTJXFcYe2kN3koshkD0/edit?usp=sharing
+
+
+
+## Setting up environment
+
+We have our data in csv file format, therefore we can just use read.csv() function to imported into RStudio.
+
+
+```{r}
+# importing data
+network <- read.csv("stateBorderNetwork.csv")
+
+head(network)
+```
+
+We will be using iGraph library to help create the network map.
+
+``` {r}
+# importing igraph library
+library(igraph)
+
+```
+
+## Network graph
+
+First, we need create the graph object that we can use to graph.
+``` {r}
+# create graph from the imported network data
+net = graph_from_data_frame(network, directed = FALSE, vertices = NULL)
+
+```
+
+Then, we can use the plot function to graph. We can also seed the random to produce the same graph over and over again. After a couple of trial and error, it seems like seed of 12345 produce the best looking graph where is looks the most similar to the actual map of the Contiguous United States map.
+
+Below is a US map with each states labeled.
+
+![](USAmap.png)
+
+
+``` {r}
+# seeding the random
+set.seed(12345)
+
+# plotting the network
+plot.igraph(net)
+
+
+```
+
+
+The general shape of the graph is similar to actually shape of the US.  We can see that the graph maps the east coast states pretty accurate according the their locations on the US map. However, the western side of the countries are clustered together but they still retain their general shape. West coast states (Washington, Oregon, and California) can be seen in the left side of the graph.
+
+## State with the Most Neigbor
+
+Each nodes represent a state and there are edges between two nodes if both states share a border together. By just looking at the graph, it is hard to figure out which node is central because there is a lot of states that clumps together making hard to read what each node are. If I had to guess, it seems like the state of Missouri is the central state with the most connections.
+
+To prove this we can calculate the degree of each node. This counts the numbers of edges that connects to each nodes.
+
+``` {r}
+# calculate the degree
+netDegree <- degree(net)
+netDegree
+```
+
+The state of Missouri has a degree of 16, which is the highest out of all the state. Therefore, it makes Missouri the most central state with most neighbors. This is consistent with my guess.
+
+## Where is Alaska and Hawaii?
+
+The states of Alaska and Hawaii were missing from our graph and data. This was because it was hard to depict these two states as isolated nodes. Since these two states does not share a border with any another US state, it shouldn't have any edges. In the csv file, you need a from and to. If you have Alaska and Hawaii mapped to "None", it end up both of them being mapped to node name "None". If you mapped to a blank node, it will end up being mapped to a node with a blank name "".
+
+To fix this we can add a separate vertices manually. For this case, we can add two vertices, one for the state of Alaska, and the other for the state of Hawaii.
+``` {r}
+
+# Add Alaska
+net = add_vertices(net, 1, name="Alaska")
+
+# Add Hawaii
+net = add_vertices(net, 1, name="Hawaii")
+
+# plotting the network
+plot.igraph(net)
+```

@@ -1,0 +1,132 @@
+---
+title: "Intro to ggplot2 through Boston census data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+```{r}
+require(ggplot2)
+#setwd("~/Desktop/Dropbox/bostonography_S2020/readings, lectures, code, data/Week 2/Day 1")
+
+acs1216<-read.csv('ACS_1216_TRACT.csv')
+```
+available publicly at https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/XZXAUP
+
+```{r}
+bos_tracts<-read.csv('Tracts_Boston_2010_BARI.csv')
+```
+available publicly at
+https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SQ6BT4
+
+```{r}
+acs1216_bos<-merge(acs1216,bos_tracts,by='CT_ID_10',all.y=TRUE)
+names(acs1216_bos)
+
+```
+
+Now, let's take a look at how graphics in ggplot2 can help us better understand the distribution of some demographic features across Boston, starting with ethnicity (though anyone using the source code can redo this with any other variable or set of variables).
+
+```{r}
+summary(acs1216_bos$White, na.rm=TRUE)
+summary(acs1216_bos$Hispanic, na.rm=TRUE)
+summary(acs1216_bos$Black, na.rm=TRUE)
+summary(acs1216_bos$Asian, na.rm=TRUE)
+
+
+hist_white<-ggplot(aes(x=White), data=acs1216_bos) + geom_histogram(bins=10)
+hist_white
+```
+
+Keep in mind that ggplot2 can combine multiple operations through '+', meaning you can constantly build a more detailed and refined graph. Let's start be renaming the axes on our first graph, and then apply that same level of detail to additional graphs of the distribution of ethnic groups.
+
+```{r}
+hist_white<-hist_white + xlab('% White') + ylab('# of tracts')
+hist_white
+
+hist_black<-ggplot(aes(x=Black), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Black') + ylab('# of tracts')
+hist_black
+
+hist_lat<-ggplot(aes(x=Hispanic), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Latino') + ylab('# of tracts')
+hist_lat
+
+hist_asian<-ggplot(aes(x=Asian), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Asian') + ylab('# of tracts')
+hist_asian
+```
+
+We see clear evidence of segregation between ethnicities, with each group concentrating more in some neighborhoods than others. It would be interesting to know what types of neighborhoods each lives in. We can do this using the 'Type' variable from BARI's geographical infrastructure, which differentiates between Residential, Downtown, Industrial/Institutional (e.g., colleges), and Parks. (Again, you can do this with any categorical variable available and can apply it to any continuous variable.)
+
+Let's look at this with stacked histograms in ggplot2.
+
+```{r}
+stack_hist_white<-hist_white + geom_histogram(aes(fill=Type),bins=10)
+```
+Again, let's use ggplot2's customization tools to refine the presentation a bit, making the Legend more interpretable.
+
+```{r}
+stack_hist_white<-stack_hist_white + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+stack_hist_white
+
+stack_hist_lat<-hist_lat + geom_histogram(aes(fill=Type), bins=10) + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+stack_hist_lat
+
+stack_hist_black<-hist_black + geom_histogram(aes(fill=Type),bins=10) + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+stack_hist_black
+
+stack_hist_asian<-hist_asian + geom_histogram(aes(fill=Type),bins=10) + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+stack_hist_asian
+
+```
+
+As a last examination, let's bring in the ethnic heterogeneity measure that BARI adds to the census data.
+
+```{r}
+stack_hist_eh<-ggplot(aes(x=EthHet), data=acs1216_bos) + geom_histogram(aes(fill=Type),bins=10) + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+stack_hist_eh
+
+
+```
+
+We see that White Bostonians are most likely to dominate the Downtown regions and that Black and Latino populations are largely relegated to Residential sections of the city. Industrial/Institutional neighborhoods are a bit more mixed, though with over-representations of White and Asian residents.
+
+Now that we know more or less the types of neighborhood each group inhabits, let's use dot plots to see which one's tend to live together and which are fully separated. The stronger the negative correlation, the more two groups are segregated from one another.
+
+We know that White is the largest proportion of Bostonians, so we'll evaluate their mixture with each of the other groups, starting with Black, as this is the most common case of segregation historically.
+
+```{r}
+plot_white_black<-ggplot(data=acs1216_bos, aes(x=White, y=Black)) + geom_point() + xlab("% White") + ylab("% Black")
+plot_white_black
+```
+To establish whether this is indeed as strong of a negative relationship as it appears, we can add a regression line.
+
+```{r}
+plot_white_black<-plot_white_black + geom_smooth(method = "lm",bins=10)
+plot_white_black
+```
+
+Note that the relationship is strong, but also has a clear "floor" at 100% White, 0% Black, producing the nonsensical prediction that entirely White census tracts would have a negative proportion of Black residents.
+
+```{r}
+plot_white_latino<-ggplot(data=acs1216_bos, aes(x=White, y=Hispanic)) + geom_point() + xlab("% White") + ylab("% Latino")  + geom_smooth(method = "lm") + geom_smooth(method = "lm")
+plot_white_latino
+
+plot_white_asian<-ggplot(data=acs1216_bos, aes(x=White, y=Asian)) + geom_point() + xlab("% White") + ylab("% Asian")  + geom_smooth(method = "lm") + geom_smooth(method = "lm")
+plot_white_asian
+```
+Segregation bewteen Whites and Blacks is strongest, with Latinos close behind. Asians seem to be distributed independent of the White population.
+
+As a last step, we can again look at whether segregation is stronger in some types of neighborhoods or others.
+
+```{r}
+plot_white_black + geom_point(aes(color= Type)) + scale_fill_hue(name="Neighborhood Type", labels=c("Downtown","Industrial/Institutional","Parks","Residential"))
+
+plot_white_black + facet_wrap(~Type)
+```
+
+To recap, we have learned how to use ggplot2 to make histograms, stacked histograms, and dot plots, and to customize axis and  value labels. There is a ton more that ggplot2 can do interms of both forms of representation and customization. For more, visit: docs.ggplot2.org.

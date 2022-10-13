@@ -1,0 +1,196 @@
+---
+title: "Mapping with R"
+author: "Nick Beauchamp"
+date: "1/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE,cache=F)
+```
+
+## Mapping with polygons files
+
+There are many approaches to mapping in R.  The simplest is just using polygons whose shapes are defined in a data frame.  Here is an example with election data which we will look more closely at in a few weeks.
+
+First we load the map data.  Note that is a collection of names (MA cities), with coordinates for the corners of each named polygon.  It's non-trivial to make these things, so best is just to find them pre-constructed.
+
+```{r}
+#setwd("~/Desktop/Dropbox/bostonography_S2020/readings, lectures, code, data/Week 2/Day 2")
+map <- read.csv("map.csv",stringsAsFactors=F)
+head(map)
+```
+
+Next we load in some data about each polygon.  In this case, we use election results for the 2012 Presidential contest per MA city.
+
+```{r message=FALSE,warning=FALSE}
+election <- read.csv("election_candidates.csv",stringsAsFactors=F)
+election_12 <- election[election$year==2012 & election$office == "President" & election$candidate=="Obama/ Biden",] 
+head(election_12)
+```
+
+Merge this with the polygon data.  (Note that we use the inner_join function instead of merge because inner_join preserves row orders, and ggplot really likes the polygons to remain sorted.)
+
+```{r}
+library(tidyverse)
+e_select_mapped <- inner_join(election_12,map)
+```
+
+Now we plot it, using geom_polygon() in ggplot, and we fill the polygons with the Obama percentage on a red-blue spectrum.
+
+```{r}
+library(ggplot2)
+ggplot(e_select_mapped) + 
+  geom_polygon() + 
+  aes(x=long,y=lat,fill=percent,group=group) + 
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white")
+```
+
+Hm... Boston is blue, as is the university area in the middle.  But why is the rural west blue?  We'll come back to this...
+
+## Shape files
+
+Often spatial data that you find on the internet is not specified as tidy polygons, but in "shape" files.  Let's work with a world map shape file found on the internet, as described here: https://www.r-graph-gallery.com/168-load-a-shape-file-into-r.html Note that if the approach in the code block below doesn't work on your machine, you can always go the URL manually, download the file, and unzip it into your working directory.
+
+```{r}
+# Acquire shape file and unzip it
+#download.file("http://thematicmapping.org/downloads/TM_WORLD_BORDERS_SIMPL-0.3.zip" , destfile="world_shape_file.zip")
+#system("unzip world_shape_file.zip")
+
+# Install package to handle shape files, and then load it
+library(sf)
+library(PROJ)
+
+world_spdf <- st_read("TM_WORLD_BORDERS_SIMPL-0.3.shp")
+```
+
+First the basic plot:
+
+```{r}
+ggplot() + geom_sf(data = world_spdf)
+```
+
+Now let's make a choropleth, or colored map, colored by population per country.
+
+```{r}
+# First clean up our variable of interest, population. We log it to make the colors look less imbalanced, otherwise India and China would be the only dark ones.
+world_spdf$POP2005[ which(world_spdf$POP2005 == 0)] <- NA
+world_spdf$POP2005LG <- log(
+  as.numeric(
+    as.character(
+      world_spdf$POP2005)) + 10) 
+
+ggplot(world_spdf) + 
+  geom_sf() + 
+  aes(fill=POP2005LG) + 
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white") +
+  labs(fill = "Log pop") +
+  theme_void() 
+```
+
+
+Now let's do it for Boston.  The data are available here: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SQ6BT4 as Tracts_Boston_2010_BARI.zip; unzip all the contained files into your wd first.
+
+```{r}
+bari_spdf <-  st_read("Tracts_Boston BARI.shp")
+
+ggplot(bari_spdf) + 
+  geom_sf()+
+  aes(fill=POP100) + 
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white") +
+  labs(fill = "Population") +
+  theme_void() 
+```
+
+
+##  Leaflet package
+
+The leaflet package is designed for HTML and loads map data into an interactive window.  It can be used with local shape files and internet map data that is dynamically loaded.
+
+For example, here is the basic package dynamically loading its default, OpenStreetMaps data. (Note that we are now using now the piping function from the "tidyverse" package installed above.  This just sends the output of the previous function into the next fuction as its first argument.)
+
+
+```{r}
+# install.packages("leaflet")
+library(leaflet)
+
+# Initialize the leaflet map with the leaflet() function
+leaflet() %>% 
+  addTiles() %>% 
+  setView( lng = -71.06, lat = 42.36, zoom = 10 )
+```
+
+To change map layers, see here: http://leaflet-extras.github.io/leaflet-providers/preview/index.html .  For example, here is Google satellite:
+
+```{r}
+leaflet() %>% 
+  addTiles() %>% 
+  setView( lng = -71.06, lat = 42.36, zoom = 10 ) %>%
+   addProviderTiles("Esri.WorldImagery")
+```
+
+Now let's take our local shapefile data and add that data.  This is following the example here: https://www.r-graph-gallery.com/183-choropleth-map-with-leaflet.html . Note that we are adding our local polygons, colored with our local data, on top of the leaflet map info that is dynamically loaded; if you zoom in, you can see the OpenStreetMaps data underneath.
+
+```{r}
+leaflet(world_spdf)%>% addTiles()  %>% setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons( stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, color = ~colorNumeric("YlOrRd", POP2005LG)(POP2005LG) )
+```
+
+
+## Adding point data to maps
+
+Let's use some point data drawn from Twitter, the geolocations of various tweets.  We'll return to this data later.
+
+Using leaflet:
+
+```{r}
+load(file="boston1k.Rdata") # Tweet locaiton data; dataframe as bostwi
+
+leaflet(bostwi) %>% 
+  addTiles() %>% 
+  setView( lng = -71.06, lat = 42.36, zoom = 14 ) %>%
+  addCircles(~as.numeric(longitude), ~as.numeric(latitude), weight = 3, radius=20, color="blue", stroke = TRUE, fillOpacity = 0.5) 
+```
+
+And now using another package, ggmap, which like leaflet loads google maps, but this time within the ggplot framework, so that we can add other layers on it easily.
+
+```{r}
+#install.packages("ggmap")
+library(ggmap)
+
+# map it:
+boston_mp <- get_map(location = c(left = -71.15, bottom = 42.3, right = -70.985746, top = 42.4))
+
+g1 <- ggmap(boston_mp) + geom_point(data=bostwi, aes(x=as.numeric(longitude), y=as.numeric(latitude)) )
+g1
+```
+
+Eg, here it is using ggplot's contour layering function:
+
+```{r}
+g1 + stat_density2d(
+    aes(x = as.numeric(longitude), y = as.numeric(latitude), fill = ..level.., alpha = 0.05),
+    size = 0.01, bins = 30, data = bostwi,
+    geom = "polygon"
+  )
+```
+
+
+## More useful sites
+
+Here are a few useful websites with examples and tutorials for mapping in R:
+
+https://www.littlemissdata.com/blog/maps
+
+https://rstudio.github.io/leaflet/
+
+https://trendct.org/2015/06/26/tutorial-how-to-put-dots-on-a-leaflet-map-with-r/
+
+https://bookdown.org/robinlovelace/geocompr/adv-map.html
+
+https://socviz.co/maps.html
+
+Especially useful is: https://www.r-graph-gallery.com/map.html
+This also has many other useful tutorials for all kinds of graphs in R.
+
+

@@ -1,0 +1,221 @@
+---
+title: "Assignment4"
+author: "Yuhong Zhao"
+date: "2/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question: Does the season affect the subway ridership in Boston?
+
+Data source: https://mbta-massdot.opendata.arcgis.com/datasets/mbta-monthly-ridership-by-mode/explore
+
+The data set contains total monthly ridership of all modes of transportation of the MBTA from January 2016 to December 2021. However, for this question, we are interested in only the orange subway line of the MBTA system. We are curious on how the season affect the ridership of the orange line.
+
+``` {r}
+transitData <- read.csv("MBTA_DATA.csv")
+
+head(transitData)
+```
+
+Here we are importing the libraries we will need. The ggplot2 library will be necessary to create graphs and visualization from our data, while the Tidyverse library will be used as a tool to manipulate and clean up our data.
+
+```{r, message=FALSE , error=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidyverse)
+```
+
+## Cleaning up the data
+
+Our data contains the monthly ridership numbers for all modes of transportation under the MBTA, which includes the Ferry, Bus, Commuter rail as well as other subway lines. In this case, we are only interested in the data for the orange line. We can first filter out the data to only keep data about the orange line using Tidyverse.
+
+```{r}
+# filter the column "route_or_line" to only values of "Orange Line"
+orangeLine <- transitData %>% filter(route_or_line == "Orange Line")
+
+head(orangeLine)
+```
+Next, we can sort the data by the date (oldest to newest) so we can interpret the data better and once we graph our data using ggplot, it should be in order by months. We will use the arrange function from tidyverse to sort.
+
+``` {r}
+# sort the date using arrange function
+orangeLineSort <- orangeLine  %>% arrange(ï..service_date)
+
+head(orangeLineSort)
+```
+
+Once we have cleaned up our data, we can break up the data and store them into each variable. We will extract data from each year and store them into their own variable. Then, we can add a column with a number of each corresponding month. We will also need to factor our new Month column since ggplot automatically sort our x axis, but our column is already sorted.
+
+
+``` {r}
+# Filtering out 2016 data 
+orangeLine2016 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2016")
+# Add a month column into our data
+orangeLine2016$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2016$Month <- factor(orangeLine2016$Month)
+
+head(orangeLine2016)
+
+
+# Filtering out 2017 data 
+orangeLine2017 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2017")
+# Add a month column into our data
+orangeLine2017$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2017$Month <- factor(orangeLine2017$Month)
+
+head(orangeLine2017)
+
+
+# Filtering out 2018 data 
+orangeLine2018 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2018")
+# Add a month column into our data
+orangeLine2018$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2018$Month <- factor(orangeLine2018$Month)
+
+head(orangeLine2018)
+
+
+# Filtering out 2019 data 
+orangeLine2019 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2019")
+# Add a month column into our data
+orangeLine2019$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2019$Month <- factor(orangeLine2019$Month)
+
+head(orangeLine2019)
+
+
+# Filtering out 2020 data 
+orangeLine2020 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2020")
+# Add a month column into our data
+orangeLine2020$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2020$Month <- factor(orangeLine2020$Month)
+
+head(orangeLine2020)
+
+
+# Filtering out 2021 data 
+orangeLine2021 <- orangeLineSort %>% filter(substr(ï..service_date, 1,4) == "2021")
+# Add a month column into our data
+orangeLine2021$Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# Factor the month column
+orangeLine2021$Month <- factor(orangeLine2021$Month)
+head(orangeLine2021)
+
+```
+
+
+### Plotting using ggplot
+
+We can plot the 2016 data on a bar plot to see how it looks like.
+
+``` {r}
+# plotting using ggplot with the dates for x values and total riderships for y values
+orangeLine2016Plot <- ggplot(data=orangeLine2016,aes(x= Month, y= total_monthly_ridership)) + geom_bar(stat="identity")
+orangeLine2016Plot
+
+```
+
+This seems like a good start and we can also improve the visualization of our graph. First, we can improve and give a label for the y axis, add a title, and change the color of the bars.
+
+``` {r} 
+orangeLine2016Plot <- orangeLine2016Plot + 
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#2BC58B") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2016",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+
+orangeLine2016Plot
+``` 
+
+This looks good and we should plot the bar plot for 2017 - 2021.
+
+``` {r}
+# Plot for the 2017 data
+orangeLine2017Plot <- ggplot(data=orangeLine2017,aes(x= Month, y= total_monthly_ridership)) +
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#FFC863") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2017",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+orangeLine2017Plot
+
+# Plot for the 2018 data
+orangeLine2018Plot <- ggplot(data=orangeLine2018,aes(x= Month, y= total_monthly_ridership)) + 
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#F7803C") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2018",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+orangeLine2018Plot
+
+# Plot for the 2019 data
+orangeLine2019Plot <- ggplot(data=orangeLine2019,aes(x= Month, y= total_monthly_ridership)) + 
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#6F50E2") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2019",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+orangeLine2019Plot
+
+# Plot for the 2020 data
+orangeLine2020Plot <- ggplot(data=orangeLine2020,aes(x= Month, y= total_monthly_ridership)) + 
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#85C85A") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2020",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+orangeLine2020Plot
+
+# Plot for the 2021 data
+orangeLine2021Plot <- ggplot(data=orangeLine2021,aes(x= Month, y= total_monthly_ridership)) + 
+  # changing the bar color
+  geom_bar(stat="identity", fill = "#1D6EE8") +
+  # Changing the Y axis scale to millions
+  scale_y_continuous(name = "Total Ridership (in Millions)",labels = function(x) x / 1000000) +
+  # Adding a title
+  labs(title = "Total ridership by months in 2021",
+       subtitle ="Ridership for MBTA Orange Line")
+  
+orangeLine2021Plot
+
+
+
+```
+
+# Analysis
+
+In 2016, we can see that ridership number stayed nearly constant for the entire year, however there are two bumps occurring in the spring (April to June) and fall (September to November) season months. This pattern also occurred in 2017, 2018, and 2019. I suspect that this is due to the weather during these seasons where its more suitable for public transportation. It is also possible that it is due to the students in the Boston area since college takes place during those months and considering that Boston have a big student population. 
+
+The 2020 graph shows a big dip in ridership with January having over 5 million riders and April having about half a million riders. This is due to the Covid-19 pandemic where restrictions were in place to stop the spread. During the pandemic, most people transitioned to work from home, thus reducing the need to ride public transportation. However, we can see that towards the end of the year, there was bump in ridership during the fall season months. This is interesting despite the Covid-19 pandemic happening.
+
+The 2021 graph shows mostly recovery towards pre-pandemic ridership numbers, however we see a decline in ridership in the last two months of the year. In the fall season months we again see that bump or bell shaped pattern.
+
+From analyzing monthly ridership data of the MBTA Orange Line from 2016 to 2021, we can say that there is a correlation between the season and the total monthly ridership. Pre-pandemic years (2016-2019) shows a small bump increase in the ridership numbers during the spring and fall seasons, while post-pandemic year (2020 - 2021) also a bump increase in the ridership during the fall season, but not spring (probably due to Covid).
+
+# Conclusion
+
+This assignment have taught me how to answer questions with data and how to make graphs look more visual appealing. In the beginning, I was thinking about the MBTA and then the question came to mind. Once I got a question in mind, I knew what kind of data to look for and what kind of visual representation I will need. While I was working with the data, there was some roadblock in terms of how to clean up the data to what I was wanted. For example, I didn't know what kind of function to use to sort or filter the data, and it took some googling to solve. When I was plotting the bar graph, I had an issue where x axis that represented the months would be sorted by ggplot. I learned to factor the column so ggplot would ignore sorting it. Lastly, I was exploring how to improve the bar graph. I found that the colors made a big difference in terms of visualization and having a title definitely helped too.

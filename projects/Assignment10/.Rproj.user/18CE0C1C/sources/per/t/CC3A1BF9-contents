@@ -1,0 +1,203 @@
+---
+title: "Assignment10"
+author: "Yuhong Zhao"
+date: "4/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 10
+
+This assignment is to redo and improve an previous assignment. I've chose to redo Assignment 1 since it was the first assignment and first time thinkering with R and graphing with Ggplot2. I've included below what I did for Assignment 1 and after is the improvement.
+
+# Old Assignment 1
+
+### Importing data
+
+This is census data from the 1880 to 1830. Importing the dataset into R:
+
+```{r}
+newdf <- read.table(file="Census_Data_1880_1930.txt",header=TRUE,sep="\t")
+```
+
+### Extracting Data
+
+Extracting the birthplace and their parent's birthplace from the data set.
+
+```{r}
+# Extract the birthplace of each census participant 
+birthplace <- table(newdf$bpl)
+
+#Extract the mother's of each census participants
+motherBirthplace <- table(newdf$mbpl)
+
+#Extract the father's of each census participants
+fatherBirthplace <- table(newdf$fbpl)
+
+```
+
+### Graphing the data using a pie chart
+```{r}
+#The birthplace of each participants shown in a pie chart
+pie(birthplace)
+
+#The birthplace of each participants shown in a pie chart
+pie(motherBirthplace)
+
+#The birthplace of each participants shown in a pie chart
+pie(fatherBirthplace) 
+```
+
+### Analyzing
+
+If we compare the pie chart  of the mother's and father's birthplace, we can see that both are very similar and almost exactly. However, if we look at the participants' birthplace pie chart, we can see that there is some difference. Massachusetts is the majority birthplace with over 50% compared to their parent's majority birthplace which is Ireland. From this observation, we can say that there are more second generation immigrants than first generation immigrants. 
+
+## Improvements to Assignment 1
+
+### Introduction
+
+We have the Boston census data from 1880 to 1930. We would like to look at the census participants birthplaces and each census' parents birthplace and see whether if there is more second generation immigrants than first generation.
+
+To do this, we will be creating a pie chart of the census participants birthplaces and analyzing for which region has the biggest share. We will do this for the both parents of each participants as well. 
+
+First we have to import the data into R. We will also need dplyr as a data cleaning tool and GGplot2 to do our graphing.
+
+```{r, message = FALSE}
+# importing data
+census <- read.table(file="Census_Data_1880_1930.txt",header=TRUE,sep="\t")
+
+# importing dplyr for data cleaning
+library(dplyr)
+
+# importing ggplot2 library for graphing
+library(ggplot2)
+```
+
+When we plot a simple pie chart, we see that the data breakdown the birthplace by states in the US and countries outside the US.
+```{r} 
+# Extract the birthplace of each census participant
+birthplace <- table(census$bpl)
+
+# Plot an pie chart of the participant birthplace
+pie(birthplace)
+
+```
+
+Since we are focus on the whether if each participant is a first generation or second generation immigrant, which state the participant was born in does not matter. Therefore, we will need to clean up our data and combine all the birthplaces in a US state into a bigger category to represent the entire country of USA. Which country abroad does not matter as well since we only care if they are born within the US or not.
+
+### Data Cleanup
+
+I have created a csv file with all the US states. We will use this data to check if the birthplace correspond to any states in our data. If it does, then we will rename it to "USA". Then, we will rename those whose birthplace is not in the USA to be "Foreign". For the purpose of this analysis we will not consider Puerto Pico as a US State and people who is born in Puerto Rico will be merged to the Foreign Group.
+
+``` {r}
+# Importing a list of US States name
+states <- read.csv('StatesUSA.csv')
+
+# rename all US States to "USA"in the bpl column
+censusUSA <- census %>% mutate(bpl=replace(bpl, bpl %in% states$States, "USA"))
+
+# rename all values that are not "USA" to "Foreign"
+censusUSA$bpl <- recode(censusUSA$bpl, USA="USA", .default = "Foreign")
+
+# group by the birthplace and count
+birthplaceUSA <- censusUSA %>% group_by(bpl) %>% tally() %>%
+  # calculate the percentage per group
+  mutate(perc = `n` / sum(`n`)) %>% 
+  # convert to percent format
+  #mutate(labels = scales::percent(perc))
+  mutate(labels = scales::percent(perc, accuracy = 0.01))
+birthplaceUSA
+```
+
+We see that all the US states have been merged together, which means that this was successful. 
+
+Then, we will do the same for both parents birthplace of each participants and verify if we have done the correctly.
+
+``` {r}
+
+# rename all US States to "USA"in the mbpl column
+censusUSA <- censusUSA %>% mutate(mbpl=replace(mbpl, mbpl %in% states$States, "USA"))
+
+# rename all values that are not "USA" to "Foreign"
+censusUSA$mbpl <- recode(censusUSA$mbpl, USA="USA", .default = "Foreign")
+
+# group by the birthplace and count
+mbirthplaceUSA <- censusUSA %>% group_by(mbpl) %>% tally() %>%
+  # calculate the percentage per group
+  mutate(perc = `n` / sum(`n`)) %>% 
+  # convert to percent format
+  mutate(labels = scales::percent(perc, accuracy = 0.01))
+mbirthplaceUSA
+
+
+
+# rename all US States to "USA"in the fbpl column
+censusUSA <- censusUSA %>% mutate(fbpl=replace(fbpl, fbpl %in% states$States, "USA"))
+
+# rename all values that are not "USA" to "Foreign"
+censusUSA$fbpl <- recode(censusUSA$fbpl, USA="USA", .default = "Foreign")
+
+# group by the birthplace and count
+fbirthplaceUSA <- censusUSA %>% group_by(fbpl) %>% tally() %>%
+  # calculate the percentage per group
+  mutate(perc = `n` / sum(`n`)) %>% 
+  # convert to percent format
+  mutate(labels = scales::percent(perc , accuracy = 0.01))
+fbirthplaceUSA
+
+```
+### Graphing with ggplot2
+
+After we have cleaned the data, we are ready to graph them. We will be using a pie chart from ggplot2 to help with our anaylsis.
+
+```{r}
+
+# Pie chart for each participants birthplace
+ggplot(data=birthplaceUSA, aes(x = "", y = perc, fill=bpl)) + 
+  geom_bar(stat="identity", width=1) + 
+  # creates the pie chart and remove the theme
+  coord_polar("y") + theme_void() + 
+  # overlay percentage values to the corresponding categories 
+  geom_text(aes(label = labels), position = position_stack(vjust = 0.5)) + 
+  # add title and subtitle
+  labs(title = "Percentage of participants' birthplace",
+       subtitle = "census data from the 1880 to 1830",
+       fill = "Birthplace")
+
+
+# Pie chart for mother birthplace
+ggplot(data=mbirthplaceUSA, aes(x = "", y = perc, fill=mbpl)) + 
+ geom_bar(stat="identity", width=1) + 
+  # creates the pie chart and remove the theme
+  coord_polar("y") + theme_void() + 
+  # overlay percentage values to the corresponding categories 
+  geom_text(aes(label = labels), position = position_stack(vjust = 0.5)) + 
+  # add title and subtitle
+  labs(title = "Percentage of participants' mother birthplace",
+       subtitle = "census data from the 1880 to 1830",
+       fill = "Birthplace")
+
+# Pie chart for father birthplace
+ggplot(data=fbirthplaceUSA, aes(x = "", y = perc, fill=fbpl)) + 
+  geom_bar(stat="identity", width=1) + 
+  # creates the pie chart and remove the theme
+  coord_polar("y") + theme_void() + 
+  # overlay percentage values to the corresponding categories 
+  geom_text(aes(label = labels), position = position_stack(vjust = 0.5)) + 
+  # add title and subtitle
+  labs(title = "Percentage of participants' father birthplace", 
+       subtitle = "census data from the 1880 to 1830", 
+       fill = "Birthplace")
+
+```
+
+### Conclusion
+
+We see that a majority of the participants in the census are born within the US with 67.97% of the participants have their birthplace as USA, compared to the 32.03% that are foreign born. For the participants' parents, we see an interesting result. Both parents have a similar rate of foreign born and US born. 64.84% of the participants' mother is born abroad and 65.36% of the participants' father is born abroad. These are within 1% of each other and we can assume that they are the similar. This suggest that their parents mostly immigrate into the US together or they've meet after they have immigrated. Comparing this to the participants' birthplace, there are more foreign born and less US born. Most of the participants that were born here have parents that were born abroad meaning that their parents were the first one in the family to immigrate into the US, making them first generation and their child as second generation. From the pie chart, we can conclude that there are more participants of the census that are second generation than first generation. 
+
+# Improvements
+
+Comparing to the first assignment, I have made tremendous improvement in data cleaning and transforming the data into the way we want it to be. There is also improvement in making visualization since I have learn new libraries and tools (such as ggplot) to create much better graphs than relying on the basic built-in functions. I have also improve analysis by describing things much more in depth and making connections to other things; even though some analysis may not be relevant to the question, it is still interesting to see what the data suggest.  

@@ -1,0 +1,8 @@
+"0",""
+"0","shootingMap <- ggplot() + geom_sf(data=shootingData1) + aes(fill=ShootingCount)"
+"0",""
+"0","# We can improve the gradient color scale as well as add a better name to the scale"
+"0","shootingMap1 <- shootingMap + scale_fill_gradient2(midpoint=.1,low = ""red"",high=""blue"",mid=""white"") + "
+"0","  labs(title = "" Numbers of Shooting from Janaury 2015 to January 2022"","
+"0","       fill = ""# of Shooting"")"
+"0","shootingMap1"

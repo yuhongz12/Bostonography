@@ -1,0 +1,4 @@
+"0","# filter the column ""route_or_line"" to only values of ""Orange Line"""
+"0","orangeLine <- transitData %>% filter(route_or_line == ""Orange Line"")"
+"0",""
+"0","head(orangeLine)"

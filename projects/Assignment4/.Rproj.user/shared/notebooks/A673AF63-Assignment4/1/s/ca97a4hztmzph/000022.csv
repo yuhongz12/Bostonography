@@ -1,0 +1,4 @@
+"0","# plotting using ggplot with the dates for x values and total riderships for y values"
+"0","orangeLine2016Plot <- ggplot(data=orangeLine2016,aes(x= Month, y= total_monthly_ridership)) + geom_bar(stat=""identity"")"
+"0","orangeLine2016Plot"
+"0",""

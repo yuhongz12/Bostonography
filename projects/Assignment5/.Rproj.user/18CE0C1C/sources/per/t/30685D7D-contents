@@ -1,0 +1,169 @@
+---
+title: "MA elections 2"
+author: "Nick Beauchamp"
+date: "3/18/2018"
+output: html_document
+---
+
+## Visualizing election results
+
+First let's read in MA election results for a variety of recent elections. (Data provided by Ben Schmidt.)  We have two rows for each election, one for each candidate.
+
+```{r}
+#setwd("~/Desktop/Dropbox/bostonography_S2018/lectures etc/Week 12 - Elections and Legislatures")
+election = read.csv("election_candidates.csv",stringsAsFactors=F)
+head(election)
+```
+
+Let's map these results.  We use a map file of latitude and longitude coordinates of the shapes of each town.
+
+```{r}
+map = read.csv("map.csv",stringsAsFactors=F)
+head(map)
+```
+
+We merge the town-level data from these two datasets and plot them.  Let's try using a bit of the "tidy" language in R, which is a set of more modern functions developed for R, most notably the "%>%" function, which pipes the results on the left into the function on the right, on down the pipe.  Here we select the Obama/Biden vote percent in 2012, and pipe it into the _inner_join()_ function, which matches the town names.  We then plot it using ggplot.
+
+```{r message=FALSE,warning=FALSE}
+library(tidyverse)
+e_select_mapped <- election[election$year==2012 & election$office == "President" & election$candidate=="Obama/ Biden",] %>% inner_join(map)
+
+library(ggplot2)
+ggplot(e_select_mapped) + 
+  geom_polygon() + 
+  aes(x=long,y=lat,fill=percent,group=group) + 
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white")
+```
+
+Compare this to Scott Brown's election in 2010.  We will return to this election next week for a closer look.
+
+```{r}
+e_select_mapped <- election %>% 
+  filter(`year`==2010,office=="U S Senate Special",`candidate` == "Scott P. Brown") %>% inner_join(map)
+
+ggplot(e_select_mapped) + 
+  geom_polygon() + 
+  aes(x=long,y=lat,fill=percent,group=group) + 
+  scale_fill_gradient2(midpoint=.5,low = "blue",high="red",mid="white")
+```
+
+We can also get fancier and examine which towns were won in a landslide in Governor's races from 1970 to 2010.
+
+```{r}
+election %>% 
+  filter(`office`=="Governor", percent > .6) %>%
+  inner_join(map) %>%
+  ggplot() + 
+  geom_polygon() + 
+  aes(x=`long`,y= `lat`,fill= `percent`,group= `group`) + 
+  facet_wrap(~`year`)
+```
+
+
+
+## 2016 Elections
+
+Now let's look at some 2016 election results.  The key elections were the Presidential election, and two major referenda, on charter schools and marijuana.  (Data again courtesy of Ben Schmidt.)
+
+We read in the data, convert it from two lines per town (yes and no vote counts) to one line per town with the associated yes percentage, and then merge all three datasets by town.
+
+```{r}
+mj <- read.csv("Marijuana.csv",stringsAsFactors=F) 
+charter <- read.csv("Charter_Schools.csv",stringsAsFactors=F)
+cltr <- read.csv("clinton_trump.csv",stringsAsFactors=F)
+
+mjyn <- spread(mj,candidate,votes)
+mjyn$mj_yes_pct <- (mjyn$Yes) / (mjyn$Yes + mjyn$No)
+
+charteryn <- spread(charter,candidate,votes)
+charteryn$charter_yes_pct <- (charteryn$Yes) / (charteryn$Yes + charteryn$No)
+
+cltryn <- spread(cltr,candidate,votes)
+cltryn$cl_yes_pct <- (cltryn$Clinton) / (cltryn$Clinton + cltryn$Trump)
+
+allvotes <- merge(cltryn,charteryn,by="town")
+allvotes <- merge(allvotes,mjyn,by="town")
+allvotes <- allvotes[,c("town","cl_yes_pct","charter_yes_pct","mj_yes_pct")]
+```
+
+Now we can explore some of the relationships.  It's not all just partisan ideology!  What do you observe?
+
+```{r}
+ggplot(allvotes,aes(x=cl_yes_pct,y=mj_yes_pct)) + geom_point() + stat_smooth(span=0.5)
+
+ggplot(allvotes,aes(x=cl_yes_pct,y=charter_yes_pct)) + geom_point() + stat_smooth(span=1)
+
+ggplot(allvotes,aes(x=charter_yes_pct,y=mj_yes_pct)) + geom_point() + stat_smooth(span=1)
+```
+
+### What is driving these differences?
+
+In order to explain these voting patterns, we need demographic information about MA towns.  Our data comes courtesy of Dan O'Brien and BARI.
+
+```{r}
+# MA demographic info courtesy of Dan O'Brien and BARI:
+massdemog_full <- read.csv("mass1216.csv",stringsAsFactors=F)
+```
+
+Next we prep the data, keeping only the subset of variables that we need, and transforming a few of them to make it all consistent.
+
+```{r}
+# Keep only basic demographics and redo some of them:
+keepvars <- colnames(massdemog_full)[c(22,23,24,25:26,30,36,49:52,74)]
+mav <- massdemog_full[,keepvars]
+mav$PctYoung <- mav$AgeU18 + mav$Age1834
+mav$PctCollege <- mav$Bach + mav$Master + mav$Prof + mav$Doc
+mav$PctFemale <- mav$SexRatio / (1 + mav$SexRatio)
+mav$PctWhite <- mav$White
+mav <- mav[,c(12,1,2,7,13:16)]
+```
+
+Finally, since the demographic data has multiple entries per town, we need to aggregate by town, weighting each row by the number of people in it.
+
+```{r}
+# Aggregate all vars by town using population-weighed mean
+mav[,-c(1:2)] <- mav[,-c(1:2)] * mav[,2]
+massvars <- aggregate(.~TOWN,mav,FUN=sum)
+massvars[,-c(1:2)] <- massvars[,-c(1:2)] / massvars[,2]
+```
+
+And then we merge that data with our voting data.
+
+```{r}
+# Combine with town-level voting data
+colnames(massvars)[1] <- "town"
+massvars$town <- tolower(massvars$town)
+allvotes$town <- tolower(allvotes$town)
+
+mass_votes_demog <- inner_join(allvotes,massvars)
+write.table(mass_votes_demog,"mass_votes_demog.csv",col.names=TRUE,row.names=F,sep=",")
+```
+
+So what's going on with the marijuana vote?  We can explore this via visualization and multipl regression.
+
+```{r}
+library(ggplot2)
+
+ggplot(mass_votes_demog, aes(x=MedHouseIncome, y=mj_yes_pct, label=town)) + geom_point(alpha = 0.7, aes(size=TotalPop, color=cl_yes_pct)) + scale_color_gradient(low = "red",high="blue") +
+  geom_text(data=subset(mass_votes_demog, TotalPop > 65000),alpha=0.8, vjust=-0.6,hjust=-0.1) +
+  xlab("Median Household Income") + ylab("Percent voting Yes on Recreational Marijuana") 
+
+
+
+# quick regression
+summary(lm(mj_yes_pct ~ PopDen + MedHouseIncome + PctYoung + PctCollege + PctFemale + PctWhite,data=mass_votes_demog))
+
+# But we should really weight by the population of each town
+summary(lm(mj_yes_pct ~ PopDen + MedHouseIncome + PctYoung + PctCollege + PctFemale + PctWhite,data=mass_votes_demog, weights=TotalPop))
+
+# Should we include ideology?
+summary(lm(charter_yes_pct ~ PopDen + MedHouseIncome + PctYoung + PctCollege + PctFemale + PctWhite + cl_yes_pct,data=mass_votes_demog, weights=TotalPop))
+
+# Incidentally, the correct model is actually logistic, since the DV is a proportion
+#  (Though it actually does worse in matching yhat to y b/c y doesn't come close to 0 or 1)
+# summary(glm(mj_yes_pct ~ PopDen + MedHouseIncome + PctYoung + PctCollege + PctFemale + PctWhite + cl_yes_pct,data=mass_votes_demog, weights=TotalPop, family=binomial))
+```
+
+Many things going on here.  One odd one is that white is unrelated to mj, but if you control for everything else it is extremely predictive.
+
+

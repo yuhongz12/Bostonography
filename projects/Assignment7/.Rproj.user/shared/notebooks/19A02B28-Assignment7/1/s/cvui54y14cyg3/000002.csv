@@ -1,0 +1,2 @@
+"0","# overlaying crime data and subway stop buffer"
+"0","tm_shape(subwayStopSF) + tm_borders() + tm_shape(crimeSF) + tm_dots()"

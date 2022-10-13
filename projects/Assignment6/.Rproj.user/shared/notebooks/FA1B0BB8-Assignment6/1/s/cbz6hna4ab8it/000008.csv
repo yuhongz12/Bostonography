@@ -1,0 +1,7 @@
+"0",""
+"0","cor(pca1,scorecard$ProgessiveScore)"
+"1","[1]"
+"1"," -0.7992006"
+"1","
+"
+"0","plot(pca1,scorecard$ProgessiveScore)"

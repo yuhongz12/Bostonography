@@ -1,0 +1,4 @@
+"0","# sort the date using arrange function"
+"0","orangeLineSort <- orangeLine  %>% arrange(ï..service_date)"
+"0",""
+"0","head(orangeLineSort)"

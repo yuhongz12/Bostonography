@@ -1,0 +1,6 @@
+"0","# Extract the birthplace of each census participant"
+"0","birthplace <- table(census$bpl)"
+"0",""
+"0","# Plot an pie chart of the participant birthplace"
+"0","pie(birthplace)"
+"0",""

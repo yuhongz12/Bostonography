@@ -1,0 +1,4 @@
+"0","# importing data"
+"0","network <- read.csv(""stateBorderNetwork.csv"")"
+"0",""
+"0","head(network)"

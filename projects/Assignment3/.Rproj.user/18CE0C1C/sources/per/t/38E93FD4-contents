@@ -1,0 +1,71 @@
+---
+title: "Assignment3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Importing libraries
+
+Importing necessary libraries for the code below.
+
+``` {r, message = FALSE}
+# Importing necessary libraries
+library(sf)
+library(PROJ)
+library(tidyverse)
+library(ggplot2)
+```
+
+## Boston Police District
+
+This is the map data of the Police Districts in Boston (Source: https://data.boston.gov/dataset/police-districts1). I downloaded the Shapefile from the site and imported into RStudio using the library sf. To visualize it, let's make a simple plot of the map data.
+
+```{r}
+mapData <- st_read("Police_Districts.shp")
+
+map <- ggplot() + geom_sf(data = mapData)
+map
+
+```
+
+## Shooting incidents in Boston
+
+**Source: https://data.boston.gov/dataset/shootings**
+
+The data shows the shooting incidents happened in Boston from January 1, 2015 to January 24, 2022. The shootings are divided into where in each police districts it took place. I joined the map data and shooting data by district and then I grouped by district to return a data set with how many shooting incidents happened each police district.
+
+```{r}
+
+# Importing the data
+data <- read.csv("bostonShooting.csv", stringsAsFactors = FALSE)
+
+shootingData <- inner_join(mapData, data, by="DISTRICT")
+shootingData
+
+shootingData1 <- shootingData %>% group_by(DISTRICT) %>% summarise(ShootingCount = n())
+shootingData1
+```
+
+## Plotting the data onto the map
+
+To understand the data more visually, we can plot the data into our Boston Police District maps to show how many shootings have happened in different areas of the city. 
+
+```{r}
+
+shootingMap <- ggplot() + geom_sf(data=shootingData1) + aes(fill=ShootingCount)
+
+# We can improve the gradient color scale as well as add a better name to the scale
+shootingMap1 <- shootingMap + scale_fill_gradient2(midpoint=.1,low = "red",high="blue",mid="white") + 
+  labs(title = " Numbers of Shooting from Janaury 2015 to January 2022",
+       fill = "# of Shooting")
+shootingMap1
+```
+
+
+## Conclusion
+
+From the map above, we can see that there is a high number of shooting around the center district hence the darker color, which is district B2. We could make a conclusion that area is not  safe because there is a high number of shooting, however we have to keep in mind that the data is the total amount of shooting incidents that happened from January 2015 to January 2022. That area might have a higher population than other districts which may contributes to a higher shooting incidents. We can look closely if we take the the total shootings and divided by the population in that district to get a percentage. In addition, we can also compare this to other cities in Massachusetts, America, and/or other countries.

@@ -1,0 +1,91 @@
+---
+title: "Assignment9"
+author: "Yuhong Zhao"
+date: "4/8/2022"
+output: html_document
+---
+
+
+## Assignment9
+
+We are looking at the network of American football games between Division IA colleges during regular season Fall 2000. 
+ 
+**Source:** M. Girvan and M. E. J. Newman, Proc. Natl. Acad. Sci. USA 99, 7821-7826 (2002).
+
+http://www-personal.umich.edu/~mejn/netdata/football.zip
+
+## Downloading and importing data
+
+Once the zip file is downloaded and extracted, we can import the .gml file by opening it with Gephi. This is how the initial graph looks like.
+ 
+![](graphInit.PNG)
+
+## Improving visualization
+
+Each dot is a node representing a college that played in the Fall 2000 season and each line is a edge that connects between two nodes if both colleges competed against each other. 
+
+Under the Data Laboratory tab in the top, we can the first few data entries of each nodes and edges. 
+
+![](nodes.PNG)
+
+Each nodes has an ID, label that represents the name of the college, and a value that indicates the conference the college is part of. Below is a table of what value correspond to which conference. This is taken from the text file within the zip file.
+
+| Value | Conference       |
+|-------|------------------|
+| 0     | Atlantic Coast   |
+| 1     | Big East         |
+| 2     | Big Ten          |
+| 3     | Big Twelve       |
+| 4     | Conference USA   |
+| 5     | Independents     |
+| 6     | Mid-American     |
+| 7     | Mountain West    |
+| 8     | Pacific Ten      |
+| 9     | Southeastern     |
+| 10    | Sun Belt         |
+| 11    | Western Athletic |
+
+
+To improve visualization, we can first give each node a color based on their value. Thus, we can group nodes with the same conference. In the main Overview screen and in the top left Appearence section, make sure we are in the nodes section and click on the color icon on the right. We can give a partition color by their values and by clicking on the "Palette" word, we can generate a palette of 12 color since we have 12 different conference. Once that's done, we can apply the changes. Below is also attached the color legend.
+
+![](colorLegend.PNG)
+
+![](graphColored.PNG)
+
+The graph definitely looks better simply by changing the colors. Next, we can pick a layout in the Layout section under the Apperance section. I found the Yifan Hu layout to the best since it separate each colors to form their own cluster.
+
+![](graphYiFan.PNG)
+
+We can also select the Expansion layout to spread them further apart, so when we show the label text we can read it more clearly. 
+
+![](graphLabel.PNG)
+
+
+## Centrality analysis
+
+We run a network diameter test to calculate the centrality. This can be done at the statistics section on the right side. Under Network Overview, we find the Network Diameter row and click on run. This returns a windows of the test report, however this can be ignored since it is not important to the analysis. 
+
+We can set the size of each node based on their betweenness centrality. This means that small nodes will be less central while bigger nodes will be more central. In the appearance section, select the size icon, and  under the ranking tab, we can select the betweeness centrality. I decided that Min size of 10 and Max size of 40 produce the best result. We can turn off the label for now to see the nodes more clearly.
+
+![](graphCenter.PNG)
+
+We can see that there are two big nodes in the center of the graph: one is a blue-green color node and the other is a peach color node. We can show the label text again and hover over these two nodes to highlight the node and its adjacent node.
+
+
+![](graphBrighamYoung1.png)
+![](graphBrighamYoung.png)
+
+We can see that Notre Dame University and Bringham Young University is pretty central. However, for Bringham Young University we can see that there is a lot of connection to nodes of the same color. This implies that Bringham Young played a lot of games with colleges within their conference. On the contrary, Notre Dame don't have a lot of connection to nodes of the same color, but rather nodes of different color. This means that Notre Dame competed with more colleges outside of their conference than within their conference. 
+
+## Degree analysis
+
+Instead of the size of the node determined by its centrality, we can determine it by the degree. The degree represent how many edges are connected to the node. Thus, if a node has a high degree, then that college has played many games in the season. Otherwise, that college has played football small amount of games in the season.
+
+To do it, in the appearance section and click on the size icon, we can select size by degree instead of betweenness centrality. 
+
+![](graphDegree.PNG)
+
+We see that most nodes are similar in size except for a couple. As the degree represent the amount of games the college played in the season, this implies that most university played a similar amount of games. We can also say that there isn't a strong correlation between centrality and degree since nodes with a lower centrality does not mean it has a lower or higher degree.
+
+
+

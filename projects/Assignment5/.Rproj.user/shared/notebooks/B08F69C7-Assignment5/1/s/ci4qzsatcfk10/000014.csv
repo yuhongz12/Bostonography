@@ -1,0 +1,4 @@
+"0",""
+"0","# Importing the demographic data"
+"0","demog <- read.csv(""mass_votes_demog.csv"")"
+"0","head(demog)"

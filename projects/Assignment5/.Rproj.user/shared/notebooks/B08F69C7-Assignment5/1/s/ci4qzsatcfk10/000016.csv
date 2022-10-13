@@ -1,0 +1,4 @@
+"0",""
+"0","#Importing map data for MA towns"
+"0","map = read.csv(""map.csv"",stringsAsFactors=F)"
+"0","head(map)"

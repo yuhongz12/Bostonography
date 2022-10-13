@@ -1,0 +1,127 @@
+---
+title: "Assignment7"
+author: "Yuhong Zhao"
+date: "3/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question: Are crimes more likely to happen around Subway Station?
+
+I would like to find out whether crimes are more likely to happen around subway stations. To do this, I will need a data set with the list of reported crimes in Boston and subway stop location data. Then, I will create a buffer around each subway stop and do a buffer spatial analysis. In this case, a buffer analysis is great because we can look for clusters around a station that tell us if the station is the source of those crimes. 
+
+**Boston Crime Data 2022:** [https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system/resource/313e56df-6d77-49d2-9c49-ee411f10cf58](https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system/resource/313e56df-6d77-49d2-9c49-ee411f10cf58)
+
+**MBTA subway stop:** [https://mbta-massdot.opendata.arcgis.com/datasets/MassDOT::mbta-systemwide-gtfs-map/explore?layer=0&showTable=true](https://mbta-massdot.opendata.arcgis.com/datasets/MassDOT::mbta-systemwide-gtfs-map/explore?layer=0&showTable=true)
+
+
+## Importing library
+
+Here, we are importing libraries that we will need to do our spatial analysis.
+``` {r, message = FALSE} 
+
+# sf library to handle shp file and sf object
+library(sf)
+
+# dplyr library for data cleaning functions
+library(dplyr)
+
+# tmap library for map plot and projecting
+library(tmap)
+```
+
+# Importing Data
+
+To keep our analysis simple, we are only focus crimes that happens on February 2022. Since the data set is taken place in 2022, We will filter out the data to include crime data happened on February. It is also an good idea to get rid of data that has no location, which appears Lat and Long as 0. In order to project it onto a map, we need to convert our filtered data into spatial data by using `st_as_sf()` function. Once that is done, we can plot the data as dots onto an interactive map.
+
+``` {r}
+# Setting our tmap to be interactive
+tmap_mode("view")
+
+# Importing Boston Crime 2022 Data
+crime <- read.csv("bostonCrime2022.csv")
+
+
+# filter crime data that only happened on February
+crimeFeb <-  crime %>% filter(MONTH == 2) %>%
+  #filter out crimes that has no location
+  filter(Lat > 0)
+
+
+# converting to sf data
+crimeSF <- st_as_sf(crimeFeb, coords = c("Long", "Lat"), crs = "WGS84")
+
+# Projecting crime data onto an interactive map
+tm_shape(crimeSF) + tm_dots()
+```
+
+Here, we are importing the subway stop data which includes the location for MBTA rapid transit station. This data includes stations of both heavy and light rail (Green Line and Mattapan trolley) as well as non rail (Silver Line). Although the Silver line is run by using buses, it is considered part of the Boston rapid transit system, therefore we will included it within our analysis. Since there is no need to clean the data, we can convert to spatial data. Then, a 200 meters buffer for each station can be created using `st_buffer()`. Lastly, can we can projected onto an interactive map.
+
+
+``` {r}
+# importing subway stop data
+subwayStop <- read.csv("subwayStop.csv")
+
+# converting to sf data
+subwayStopSF <- st_as_sf(subwayStop, coords = c("stop_lon", "stop_lat"),crs = "WGS84")
+
+# creating a 200 meters buffer for each station
+subwayStopSF <- st_buffer(subwayStopSF, 200)
+
+# plotting subway stop buffer
+tm_shape(subwayStopSF) + tm_borders()
+```
+
+We are overlaying the subway stop buffer with the crimes location and analyzing for cluster.
+
+``` {r}
+# overlaying crime data and subway stop buffer
+tm_shape(subwayStopSF) + tm_borders() + tm_shape(crimeSF) + tm_dots()
+```
+
+To see our cluster more clearly, we can join both dataset and create a union data. Then, we can use functions from the dplyr library to count the number of crimes within each buffer zone.
+
+``` {r}
+# creating a union of the crime and subway station buffer data
+crimeUnion <- st_intersection(crimeSF, subwayStopSF)
+
+# count how many crimes are inside each station buffer zone
+crimesPerStation <- crimeUnion %>% dplyr::select(stop_name) %>% group_by(stop_name) %>% count()
+
+head(crimesPerStation)
+
+# join with the subway stop data by station name
+cirmeCountPerStation <- full_join(subwayStop,crimesPerStation, on="stop_name")
+
+# reprojecting the data to spatial 
+cirmeCountPerStationSF <- st_as_sf(cirmeCountPerStation, coords = c("stop_lon", "stop_lat"),crs = "WGS84")
+
+# recreating the buffer zone for each station
+cirmeCountPerStationSF <- st_buffer(cirmeCountPerStationSF, 200)
+
+# plotting the subway staion buffer zone and filling by their counts of crime
+tm_shape(cirmeCountPerStationSF) + tm_borders() + tm_fill("n")
+
+#sort and list the stations with the most to least crimes
+crimesPerStationSorted <- arrange(crimesPerStation, desc(n))
+head(crimesPerStationSorted)
+
+```
+
+# Analysis
+
+Looking around the map, there is a cluster of crimes in the city center of Boston, mainly areas around the Bowdoin, Downtown Crossing, Haymarket, and Chinatown station. These areas are located in the center of Boston which is the most populous area of the city. Therefore, it somewhat makes sense that there is a higher amount of crimes than in other areas of Boston. As you move further out away from the city center, there are fewer crimes around the stations since there are also fewer people as you move out from the city center. There are outliers where Nubian station has the highest number of 67 crimes within its 200 meter radius and Maverick station have 60 crimes within its buffer. These areas are not within the downtown area but in a mostly residential area. This may suggest these areas are not as safe as we expect and may need a deeper investigation on why crimes are higher there. Station that has no data or missing data means that either there is no crimes within its border or that station is located outside of Boston.
+
+This finding is important to determine whether the Boston transit system is safe enough for daily commuters. Although it does not measure crimes or anything that happens within the train, measuring what happens around the station gives a rough idea to see what is going on. Subway stations are places where there is a lot of foot traffic, which therefore is the place where we expect a higher rate of crimes compared to other areas. Subway station also tends to be the place where a lot of the homeless and mentally ill people find shelter. Some people, including myself, have found that there are times when we feel unsafe walking inside a station. In addition, there have been reported crimes that happened inside the station, especially hate crimes against people of Asian descent during the height of the Covid pandemic.
+
+Finding clusters of crime around a station may suggest the area is not safe and may raise safety concerns. With further investigation, we can find out the root problem of what is causing these high rates of crimes and figure out what is the best way to address the issue. According to Smith and Clarke, there are mainly two types of crimes we should watch out for. Overcrowded station contributes to theft and robbery as well as sexual assault (Smith and Clarke 189-192), while under supervised stations contribute to robberies, assaults, and graffiti (Smith and Clarke 179-189). Their research used findings of studies conducted at subway stations around the globe such as the Hong Kong Metro and London Underground. This can contribute to research by looking at the Boston MBTA as an additional example. 
+
+
+**Citation**  
+Smith, Martha J., and Ronald V. Clarke. “Crime and Public Transport.” Crime and Justice, vol. 27, [University of Chicago Press, University of Chicago], 2000, pp. 169–233, http://www.jstor.org/stable/1147664.
+
+
+

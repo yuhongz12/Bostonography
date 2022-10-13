@@ -1,0 +1,4 @@
+"0"," # importing data"
+"0","scorecard <- read.csv(""scorecard_192nd_MASenate.csv"")"
+"0",""
+"0","head(scorecard)"

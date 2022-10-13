@@ -1,0 +1,25 @@
+Is the readOGR approach from the rgdal package not working?  I'd try that first, loading the data via:
+
+cal_spdf <- readOGR( dsn= ".", layer="CA_Counties_TIGER2016", verbose=FALSE)﻿﻿
+
+And then you can go from there following the templates in the RMarkdown notes (I have rgdal, broom, and tidyverse loaded, in that order).
+
+You can also try loading it with the sf package.  Following the example here ( https://github.com/allisonhorst/esm-244-lab-1 ) which may be where you found your data, you can load the shape file with:
+
+ca_counties <- st_read(dsn = ".", layer = "CA_Counties_TIGER2016")
+
+I also noticed at that git that in sf is a nice plot tool for ggplot2 that I wasn't aware of.  The demo code shows how to first easily merge data using the pipe %>% notation from tidyverse, and then using geom_sf in ggplot, with no need for "tidy" or "fortify" at all:
+
+Read in new data with covariates on the counties and then rename the variable to merge on to match what's in the ca_counties (btw, you can see the non-geographic variables in there with "names(ca_counties)" ).
+
+ca_pop_inc <- read_csv("ca_pop_inc.csv") %>% rename(NAME = COUNTY)
+
+Now the nice part: the "join" functions in tidyverse recognize the shape object as a table with shapes attached, and merge it with the population data, returning another shape+data object:
+
+ca_df <- full_join(ca_counties, ca_pop_inc) 
+
+Now we can plot it using geom_sf in ggplot without need for "tidy" or "fortify":
+
+ggplot(ca_df) +  geom_sf(aes(fill = MedFamilyIncome), color = "white", size = 0.2) +  scale_fill_gradientn(colors = c("blue","mediumorchid1","orange")) +  theme_minimal()
+
+You can see more details at the github address above; I'll definitely be using this simplified approach in future versions of this module.

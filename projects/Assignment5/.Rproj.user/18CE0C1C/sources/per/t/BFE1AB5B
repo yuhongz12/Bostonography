@@ -1,0 +1,28 @@
+{
+    "id": "BFE1AB5B",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1647117517070.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "id": "27a47c56769547d3b260e33fbf2172c7",
+        "name": "ClintonVSIncome",
+        "title": "ClintonVSIncome",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1647057274,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1647117517070,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,4 @@
+"0",""
+"0","# Importing 2016 Referendum result for Marijuana"
+"0","marijuana <- read.csv(""Marijuana.csv"", stringsAsFactors = FALSE)"
+"0","head(marijuana)"

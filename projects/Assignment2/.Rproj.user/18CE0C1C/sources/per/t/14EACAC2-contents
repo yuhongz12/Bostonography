@@ -1,0 +1,116 @@
+---
+title: "Yuhong Zhao - Assignment2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+Importing data
+
+```{r}
+require(ggplot2)
+
+acs1216<-read.csv('ACS_1216_TRACT.csv')
+bos_tracts<-read.csv('Tracts_Boston_2010_BARI.csv')
+acs1216_bos<-merge(acs1216,bos_tracts,by='CT_ID_10',all.y=TRUE)
+names(acs1216_bos)
+
+```
+
+Giving a summary about the median income for each census tract
+
+```{r}
+## Education
+summary(acs1216_bos$LessThanHS)
+summary(acs1216_bos$HSGrad)
+summary(acs1216_bos$SomeColl)
+summary(acs1216_bos$Bach)
+summary(acs1216_bos$Master)
+summary(acs1216_bos$Prof)
+summary(acs1216_bos$Doc)
+```
+
+Creating a histogram for each education level and looking for a trend
+
+```{r}
+hist_lessThanHS <- ggplot(aes(x=LessThanHS), data=acs1216_bos) + geom_histogram(bins=10) + xlab('% Less Than High School') + ylab('# of tracts')
+hist_lessThanHS
+
+hist_HSGrad <- ggplot(aes(x=HSGrad), data=acs1216_bos) + geom_histogram(bins=10) + xlab('% High school Graduate') + ylab('# of tracts')
+hist_HSGrad
+
+hist_SomeColl <- ggplot(aes(x=SomeColl), data=acs1216_bos) + geom_histogram(bins=10) + xlab('% Some College') + ylab('# of tracts')
+hist_SomeColl
+
+hist_Bach <- ggplot(aes(x=Bach), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Bachelors Degree') + ylab('# of tracts')
+hist_Bach
+
+hist_Master <- ggplot(aes(x=Master), data=acs1216_bos) + geom_histogram(bins=10) + xlab('% Masters Degree') + ylab('# of tracts')
+hist_Master
+
+hist_Prof <- ggplot(aes(x=Prof), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Professional Degree') + ylab('# of tracts')
+hist_Prof
+
+hist_Doc <- ggplot(aes(x=Doc), data=acs1216_bos) + geom_histogram(bins=10)  + xlab('% Docorate Degree') + ylab('# of tracts')
+hist_Doc
+```
+
+Let's say that we picked the median year of houses built as our categorical variable 
+``` {r}
+
+table(acs1216_bos$MedYrBuilt)
+
+# Create a vector that has the labels for our categorical variable
+vector_MedianYearBuilt <- c('Unknown','1940 to 1949','1950 to 1959','1960 to 1969','1970 to 1979','1980 to 1989','1990 to 1999','2000 to 2009','Prior to 1940')
+```
+
+We can see that majority of the houses in Boston are built prior to 1940
+
+``` {r}
+pie(table(acs1216_bos$MedYrBuilt), label=vector_MedianYearBuilt)
+```
+
+Let's divide the histogram with the median year of all the houses built for each education level
+``` {r}
+
+hist_lessThanHS1 <- hist_lessThanHS + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_lessThanHS1
+
+hist_HSGrad1 <- hist_HSGrad + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_HSGrad1
+
+hist_SomeColl1 <- hist_SomeColl + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_SomeColl1
+
+hist_Bach1 <- hist_Bach + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_Bach1
+
+hist_Master1 <- hist_Master + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_Master1
+
+hist_Prof1 <- hist_Prof + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_Prof1
+
+hist_Doc1 <- hist_Doc + geom_histogram(aes(fill=MedYrBuilt), bins=10) + scale_fill_hue(name="Education Level", labels=vector_MedianYearBuilt)
+hist_Doc1
+
+```
+
+
+We can see that majority of the houses built in Boston are prior to 1940. Although there are some outliers in the graphs, we can see a trend that people with at least a high school graduate education level are more likely to live in newer houses that are built after 1940, compared to people with an education level of less than high school. We can analysis the median income and percentage of people of with an education of less than high school to see if there will be any correlation. 
+
+
+``` {r}
+
+plot_income_lessThanHS <- ggplot(data=acs1216_bos, aes(x=LessThanHS, y=MedHouseIncome)) + geom_point() + xlab("% Less Than High School") + ylab("Median House Income") + geom_smooth(method = "lm")
+plot_income_lessThanHS
+
+```
+
+Here, we show that there is a negative correlation between the median house income and the percentage of people with education level of less than high school. This means as the percentage increase, the median income will decrease and vice versa. We can conclude that neighboorhoods with a higher rate of people with an education level of less than high school will have a lower income, which they may not have the money to live in new houses, leading to a higher rate of houses built prior to 1940.

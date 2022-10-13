@@ -1,0 +1,5 @@
+"0","# seeding the random"
+"0","set.seed(12345)"
+"0",""
+"0","# plotting the network"
+"0","plot.igraph(net)"

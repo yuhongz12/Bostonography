@@ -1,0 +1,188 @@
+---
+title: "Assignment5"
+author: "Yuhong Zhao"
+date: "3/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question: Are towns with more college educated pople more likely to vote for Clinton and Legalization of Marijuana?
+We would like to investigate whether if towns in Massachusetts with a higher population percentage of college educated more likely to vote for Clinton and Legalization of Marijuana during the 2016 Election. My hypothesis is that there is a correlation between them, where if a town with a higher percentage of college educated are more likely vote for Clinton and Marijuana.
+
+## Data
+
+To answer our question, we will need data for Massachusetts 2016 voting and referendum results and demographic.
+
+First, we will need importing the necessary libraries and import the csv as a data frame into R. We also imported a map file that contains coordinates for each town, thus we can visualize where the votes are coming from.
+
+``` {r, message = FALSE}
+
+# Importing library
+library(sf)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+# Importing 2016 Presidential election result data
+election <- read.csv("clinton_trump.csv", stringsAsFactors = FALSE)
+head(election)
+
+# Importing 2016 Referendum result for Marijuana
+marijuana <- read.csv("Marijuana.csv", stringsAsFactors = FALSE)
+head(marijuana)
+
+# Importing the demographic data
+demog <- read.csv("mass_votes_demog.csv")
+head(demog)
+
+#Importing map data for MA towns
+map = read.csv("map.csv",stringsAsFactors=F)
+head(map)
+
+```
+## Mapping with GGplot
+
+We can map the percentage of Clinton votes and Marijuana votes to visualize and understand better where the votes are coming from. 
+
+First, we will need clean the data before we are able to map it.
+
+``` {r, message = FALSE}
+
+# Seperating the different candidate votes to their own column
+election <- spread(election, candidate, votes)
+marijuana <- spread(marijuana, candidate, votes)
+
+# Make a column with the total votes
+election$Total <- election$Clinton + election$Trump + election$Johnson + election$Stein
+marijuana$Total <- marijuana$No + marijuana$Yes
+
+# Make a column that contains the percentage
+election$Cl_percent <- election$Clinton / election$Total
+marijuana$Mj_percent <- marijuana$Yes / marijuana$Total
+
+# Rename our column name so we can join with our map data
+election <- rename(election, place = town)
+marijuana <- rename(marijuana, place = town)
+
+
+# Our Clinton votes data after cleaning up
+head(election)
+
+# Our Marijuana votes data after cleaning up
+head(marijuana)
+
+```
+
+Once our data is done cleaning, we can combine them with our map data. Then we can graph it and see what's going on. In our graph, we can add a color scale for better visualization and remove the X and Y axis labels since the coordinates are not useful in this case.
+
+``` {r}
+
+# Joining with map data
+electionMap <- election %>% inner_join(map)
+mjMap <- marijuana %>% inner_join(map)
+
+
+# Map of Clinton votes percentage in MA towns
+electionMap <- ggplot(electionMap) + 
+  geom_polygon() + 
+  aes(x=long,y=lat,fill=Cl_percent,group=group) + 
+  # Gradient scale color
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white") + 
+  # Remove the X axis labels
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  # Remove the Y axis labels
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) + 
+  # Add title and subtitle
+  labs(title = "Clinton votes percentages in MA towns",
+       subtitle = "Data from 2016 MA Presidential Election")
+
+electionMap
+
+# Map of Marijuana votes percentage in MA towns
+mjMap <- ggplot(mjMap) + 
+  geom_polygon() + 
+  aes(x=long,y=lat,fill=Mj_percent,group=group) + 
+  # Gradient Scale Color
+  scale_fill_gradient2(midpoint=.5,low = "red",high="blue",mid="white") + 
+  # Remove the X axis labels
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  # Remove the Y axis labels
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) + 
+  # Add title and subtitle
+  labs(title = "Marijuana votes percentages in MA towns",
+       subtitle = "Data from 2016 MA Referendum Election")
+
+mjMap
+```
+
+
+From the maps above, we can kind of see where majority of the votes are coming from. For Clinton votes, we we can see a more blue shade of color around cities like Amherst and Boston. On the other hand, we can see that western Massachusetts have more votes for Marijuana than eastern Massachusetts. Based on my intuition, the demography of people in western MA have less percentage of college educated people than eastern MA which may contribute to the results above.
+
+## Scatterplot with GGplot
+
+We can plot the data on a plane and try to see any patterns or correlation. First, we can do a scatter plot of the percentage of college educated people against the vote share for "Yes Marijuana" for every town. Then, we can also do the same for the percentage college educated against the vote share for Clinton. With a scatter plot, we will be able to create a line of best fit to understand the correlation.
+```{r}
+
+# Percentage College VS Yes Marijuana 
+marijuanaVSCOllege <- ggplot(demog, 
+                             aes(x=PctCollege, y=mj_yes_pct)) + geom_point() +
+  # Add labels
+  labs(
+    # x axis label
+    x="College Educated Percentage", 
+    # y axis label
+    y="Marijuana Legalization Percentage", 
+    # title
+    title="How does the percentage of college educated affects Marijuana votes?",
+    # subtitle
+    subtitle = "Data from the 2016 President and Referendum Election in MA",
+    # caption
+    caption = "Each dot represent a town within Massachusetts") +
+  # Add line of best fit
+  geom_smooth(method = lm, se = FALSE)
+
+marijuanaVSCOllege
+
+# Percentage College VS Yes Clinton
+clintonVSCollege <- ggplot(demog, 
+                             aes(x=PctCollege, y=cl_yes_pct)) + geom_point() +
+  # Add labels
+  labs(
+    # x axis label
+    x="College Educated Percentage", 
+    # y axis label
+    y="Votes for Clinton Percentage", 
+    # title
+    title="How does the percentage of college educated affects Clinton votes?",
+    # subtitle
+    subtitle = "Data from the 2016 President and Referendum Election in MA",
+    # caption
+    caption = "Each dot represent a town within Massachusetts") +
+  # Add line of best fit
+  geom_smooth(method = lm, se = FALSE)
+
+clintonVSCollege
+
+```
+
+
+## Conclusion
+
+From the two graph above, we can see that there is a correlation between them. It appears that there is a slight negative correlation between Percentage of college educated and percentage of yes votes for marijuana. This means that there is more college educated people, there are less votes for legalization of marijuana. On the other hand, there is a positive correlation between percentage of college educated and percentage of votes for Clinton. As towns with a higher number of college educated people, there are more voters for Clinton. Since Clinton was the presidency candidate for the Democratic Party, there might be a correlation between college educated people and their political parties. However, we will need more data to support that claim. 
+
+Comparing the findings with my initial hypothesis, I was half correct. I was correct about the part where as a town has more educated people, it is more likely to vote for Clinton. However, I was wrong about more educated people in town will result in more votes for legalization of marijuana. It showed a negative correlation, opposite of my hypothesis, where less people are voting for legalization of marijuana as there is more college educated people. This is interesting because I expect a lot of people, especially college educated people, to vote for more progressive agenda, and the legalization of marijuana is being pushed by a lot of progressive leaders around the country. I believe to get a better idea, we will need to look at the the age of the voters for marijuana. We can also look at the college educated people broken down by age group as well. I believe that younger people, especially teenagers and young adults more likely to vote for marijuana than their parents. 
+
+Since this data is from the 2016 election results and about the State of Massachusetts, it is not representative of the entire country. Massachusetts is one of the most liberal states with the highest percentage of college educated people, therefore it carries a lot of biases. In addition, not all states held referendum election about the legalization of marijuana. To understand the correlations between college educated people and their voting patterns, we will need more data of different elections in the past and data about the entire country.
+
+
