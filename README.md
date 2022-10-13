@@ -2,6 +2,8 @@
 
 This repository contains the assignments and code I have written for INSH 2102: Bostonography in Spring 2022, Northeastern University.
 
+Home Page: [https://yuhongz12.github.io/Bostonography/](https://yuhongz12.github.io/Bostonography/)
+
 ##### Links:
 
 * [Assignment 1: Data Analysis using R](https://yuhongz12.github.io/Bostonography/projects/assignment1/assignment1.html)
